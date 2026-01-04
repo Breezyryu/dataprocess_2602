@@ -3,6 +3,7 @@
 """
 
 import cycle_categorizer
+import copy
 
 
 def categorize_all_channels(data):
@@ -21,10 +22,11 @@ def categorize_all_channels(data):
         {
             'channel_key': {
                 'categories': {...},  # categorize_cycles() 출력
-                'cycle_list': [...]   # 카테고리 라벨이 추가된 cycle_list
+                'cycle_list': [...]   # 카테고리 라벨이 추가된 cycle_list (복사본)
             },
             ...
         }
+        원본 데이터는 수정되지 않음
     """
     
     print("="*80)
@@ -37,22 +39,25 @@ def categorize_all_channels(data):
         print(f"\n처리 중: {channel_key}")
         
         # Profile 데이터 확인
-        cycle_list = channel_data['profile']
+        cycle_list_original = channel_data['profile']
         
-        if not isinstance(cycle_list, list):
+        if not isinstance(cycle_list_original, list):
             print("  ⚠️ Cycle list가 아님 - 건너뜀")
             continue
+        
+        # cycle_list의 깊은 복사본 생성 (원본 보존)
+        cycle_list = copy.deepcopy(cycle_list_original)
         
         # 카테고리화 수행
         categories = cycle_categorizer.categorize_cycles(cycle_list)
         
-        # 각 사이클에 카테고리 라벨 추가
+        # 각 사이클에 카테고리 라벨 추가 (복사본에만 적용)
         cycle_categorizer.add_category_labels(cycle_list, categories)
         
         # 결과 저장
         results[channel_key] = {
             'categories': categories,
-            'cycle_list': cycle_list
+            'cycle_list': cycle_list  # 복사본 저장
         }
         
         # 요약 출력

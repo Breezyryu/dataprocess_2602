@@ -4,6 +4,7 @@
 """
 
 import numpy as np
+import copy
 
 
 def process_all_channels(data):
@@ -18,10 +19,13 @@ def process_all_channels(data):
     
     Returns:
     --------
-    dict : 입력된 data 객체 (각 채널의 profile이 cycle_list로 업데이트됨)
+    dict : 새로운 data 객체 (각 채널의 profile이 cycle_list로 업데이트됨)
         data['channels'][channel_key]['profile'] = [cycle1_df, cycle2_df, ...]
+        원본 데이터는 수정되지 않음
     """
     
+    # 입력 데이터의 깊은 복사본 생성 (원본 보존)
+    data = copy.deepcopy(data)
 
     
     print("="*80)
