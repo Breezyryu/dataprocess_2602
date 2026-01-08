@@ -15,7 +15,7 @@ import os
 import re
 import pickle
 import pandas as pd
-import numpy as np
+import numpy as np-
 
 
 # ============================================================================
@@ -325,13 +325,27 @@ def _process_pne_data(path, info, loaded_data):
             'folder_name': info['folder_name'],
             'channel_name': channel_name,
             'cycle': None,
+            'cycle_summary': None,
+            'cycle_steps': None,
             'profile': None
         }
         
         cycle_df = load_pne_cycle_data(channel_path)
         if cycle_df is not None and not cycle_df.empty:
+            # 전체 데이터 저장 (하위 호환성)
             loaded_data[key]['cycle'] = cycle_df
+            
+            # Condition == 8: 사이클 대표 용량 (충방전 완료 시점)
+            cycle_summary = cycle_df[cycle_df['Condition'] == 8].copy()
+            loaded_data[key]['cycle_summary'] = cycle_summary
+            
+            # Condition != 8: 스텝별 용량
+            cycle_steps = cycle_df[cycle_df['Condition'] != 8].copy()
+            loaded_data[key]['cycle_steps'] = cycle_steps
+            
             print(f"      ✓ 사이클 데이터: {len(cycle_df):,}행")
+            print(f"        - 사이클 대표 용량 (Condition==8): {len(cycle_summary):,}행")
+            print(f"        - 스텝별 용량 (Condition!=8): {len(cycle_steps):,}행")
         else:
             print(f"      ✗ 사이클 데이터 없음")
         
@@ -467,6 +481,70 @@ def get_channel_cycle_list(data, channel_index=0):
     print(f"사이클 수: {len(cycle_list) if isinstance(cycle_list, list) else 0}개")
     
     return channel_key, cycle_list
+
+
+def get_cycle_summary(data, channel_index=0):
+    """
+    특정 채널의 사이클 대표 용량 가져오기 (Condition == 8)
+    
+    Parameters:
+    -----------
+    data : dict
+        process_and_combine()의 출력
+    channel_index : int
+        채널 인덱스 (기본값: 0)
+    
+    Returns:
+    --------
+    pd.DataFrame : 사이클 대표 용량 DataFrame (Condition == 8)
+    """
+    channel_keys = list(data['channels'].keys())
+    
+    if channel_index >= len(channel_keys):
+        raise ValueError(f"채널 인덱스 {channel_index}가 범위를 벗어났습니다. (최대: {len(channel_keys)-1})")
+    
+    channel_key = channel_keys[channel_index]
+    cycle_summary = data['channels'][channel_key].get('cycle_summary')
+    
+    if cycle_summary is None:
+        print(f"⚠️ 채널 {channel_key}에 cycle_summary가 없습니다.")
+    else:
+        print(f"선택된 채널: {channel_key}")
+        print(f"사이클 대표 용량 (Condition==8): {len(cycle_summary)}행")
+    
+    return cycle_summary
+
+
+def get_cycle_steps(data, channel_index=0):
+    """
+    특정 채널의 스텝별 용량 가져오기 (Condition != 8)
+    
+    Parameters:
+    -----------
+    data : dict
+        process_and_combine()의 출력
+    channel_index : int
+        채널 인덱스 (기본값: 0)
+    
+    Returns:
+    --------
+    pd.DataFrame : 스텝별 용량 DataFrame (Condition != 8)
+    """
+    channel_keys = list(data['channels'].keys())
+    
+    if channel_index >= len(channel_keys):
+        raise ValueError(f"채널 인덱스 {channel_index}가 범위를 벗어났습니다. (최대: {len(channel_keys)-1})")
+    
+    channel_key = channel_keys[channel_index]
+    cycle_steps = data['channels'][channel_key].get('cycle_steps')
+    
+    if cycle_steps is None:
+        print(f"⚠️ 채널 {channel_key}에 cycle_steps가 없습니다.")
+    else:
+        print(f"선택된 채널: {channel_key}")
+        print(f"스텝별 용량 (Condition!=8): {len(cycle_steps)}행")
+    
+    return cycle_steps
 
 
 # ============================================================================
